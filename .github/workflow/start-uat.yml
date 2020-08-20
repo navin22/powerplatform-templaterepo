@@ -1,0 +1,54 @@
+name: Test PP CLI clone CI
+
+on:
+ # repository_dispatch:
+  #  types: [export_scenario]
+   push:
+     branches:
+     - master
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+    
+    steps:    
+    - name: 'Power Platform Clone Solution Action clone'
+      uses: actions/checkout@v2-beta
+      with:
+        repository: navin22/powerplatform-clone-solution
+        ref: refs/heads/main
+        token: ${{ secrets.PP_ACTION_SEC }}
+        path: .github/actions/
+    
+    - name: 'clone this repo'
+      uses: actions/checkout@v2-beta
+      with:
+       path: "./.repo"
+      
+    - name: 'Power Platform Clone Solution Action'
+      uses: ./.github/actions
+      with:
+        user-name: 'meganb@pplatform.onmicrosoft.com'
+        password-secret: ${{ secrets.ENV_SEC }}
+        environment-url: 'https://githubdevops.crm.dynamics.com/'
+        solution-name: 'PowerPlatformGitHubALM'
+        target-folder: "./.repo/solution"
+        
+    - name: 'commiting files'
+      uses: EndBug/add-and-commit@v4
+      with:
+        add: "./.repo/solution/*.xml"
+        cwd: "./.repo"
+        author_name: GitHubAction
+        message: 'Committing unpacked solution' 
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+        
+    - name: "commit using script"
+      working-directory: "./.repo"
+      run: |
+       git add solution\
+       git commit -m "Committing unpacked solution"
+       git push --force
